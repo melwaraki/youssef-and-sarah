@@ -189,7 +189,8 @@
        The curtains start opening around 7s. We let the video play in
        (muted), then hold it just before the reveal so the user's tap
        feels like it opens the curtains. */
-    const PAUSE_AT = 6;
+    const PAUSE_AT = 6;     // hold the closed curtains here, awaiting the tap
+    const CUE_AT   = 2.5;   // seconds after load before the "tap to open" cue appears
 
     const video = document.getElementById('film');
     let opened  = false;   // user has tapped to open the curtains
@@ -205,12 +206,17 @@
     tryPlay();
     document.addEventListener('visibilitychange', () => { if (!document.hidden) tryPlay(); });
 
+    // Show the "tap to open" cue on a wall-clock timer, so it appears early
+    // and even when autoplay is blocked (e.g. iOS Low Power Mode).
+    const cueTimer = setTimeout(() => {
+      if (!opened) document.body.classList.add('waiting');
+    }, CUE_AT * 1000);
+
     // Hold the curtains closed at PAUSE_AT until the user opens them.
     video.addEventListener('timeupdate', () => {
       if (!opened && video.currentTime >= PAUSE_AT) {
         waiting = true;
         video.pause();
-        document.body.classList.add('waiting');   // fade in the "tap to open" cue
       }
     });
 
@@ -219,6 +225,7 @@
       if (opened) return;
       opened  = true;
       waiting = false;
+      clearTimeout(cueTimer);
       document.body.classList.remove('waiting');
       document.body.classList.add('opened');       // fade in buttons, hide cue
       // If autoplay never reached the hold point (e.g. iOS Low Power Mode),
