@@ -82,37 +82,43 @@
       text-decoration: none;
       white-space: nowrap;
       box-shadow: 0 3px 14px rgba(107, 74, 68, 0.22);
-      transition: transform 0.2s ease, background 0.2s ease;
+      /* opacity delayed ~2s so buttons appear after the curtains start parting */
+      transition: transform 0.2s ease, background 0.2s ease, opacity 1s ease 2s;
     }
     .hotel-link:active { transform: translate(-50%, -50%) scale(0.96); }
 
-    /* ---- Tap-to-unmute pill (autoplay must start muted) ---- */
-    .unmute {
+    /* ---- "tap to open" cue: fades in only once the curtains are
+       held closed, disappears the moment the user opens them ---- */
+    .hint {
       position: fixed;
-      top: max(16px, env(safe-area-inset-top));
-      right: 16px;
-      z-index: 20;
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 9px 15px;
-      border: none;
-      border-radius: 999px;
-      background: rgba(251, 243, 238, 0.82);
-      color: var(--ink);
+      left: 50%;
+      bottom: 16%;
+      transform: translateX(-50%);
+      z-index: 25;
+      color: var(--rose);
       font-family: inherit;
-      font-size: 15px;
-      letter-spacing: 0.04em;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      box-shadow: 0 2px 12px rgba(107, 74, 68, 0.25);
-      cursor: pointer;
-      transition: opacity 0.4s ease, transform 0.2s ease;
+      font-size: 17px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      text-shadow: 0 1px 10px rgba(251, 243, 238, 0.9);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
     }
-    .unmute:active { transform: scale(0.95); }
-    .unmute svg { width: 17px; height: 17px; fill: var(--rose); }
-    /* Hidden once the user has unmuted */
-    .unmute.is-hidden { opacity: 0; pointer-events: none; }
+    body.waiting .hint {
+      opacity: 0.9;
+      animation: hintPulse 2.2s ease-in-out infinite;
+    }
+    body.opened .hint { opacity: 0; animation: none; }
+    @keyframes hintPulse {
+      0%, 100% { transform: translateX(-50%) scale(1);    opacity: 0.55; }
+      50%      { transform: translateX(-50%) scale(1.05); opacity: 0.95; }
+    }
+
+    /* ---- Buttons stay hidden until the curtains open, then fade in ---- */
+    .hotel-link, .rsvp { opacity: 0; pointer-events: none; }
+    body.opened .hotel-link,
+    body.opened .rsvp { opacity: 1; pointer-events: auto; }
 
     /* ---- Fixed RSVP button (always reachable, floats over the video) ---- */
     .rsvp {
@@ -132,7 +138,8 @@
       text-transform: uppercase;
       text-decoration: none;
       box-shadow: 0 4px 18px rgba(107, 74, 68, 0.38);
-      transition: transform 0.2s ease, background 0.2s ease;
+      /* opacity delayed ~2s so buttons appear after the curtains start parting */
+      transition: transform 0.2s ease, background 0.2s ease, opacity 1s ease 2s;
     }
     .rsvp:active { transform: translateX(-50%) scale(0.96); }
   </style>
@@ -147,7 +154,6 @@
         poster="poster.jpg"
         autoplay
         muted
-        loop
         playsinline
         webkit-playsinline
         preload="auto">
@@ -160,13 +166,8 @@
     </div>
   </main>
 
-  <!-- Tap to enable sound -->
-  <button id="unmuteBtn" class="unmute" aria-label="Tap for sound">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12z"/>
-    </svg>
-    <span>Tap for sound</span>
-  </button>
+  <!-- Gentle "tap to open" cue (shown only while the curtains are held closed) -->
+  <div class="hint" id="hint" aria-hidden="true">tap to open</div>
 
   <!-- Fixed RSVP button. Link is set by the LINKS config in the script below. -->
   <a class="rsvp" href="https://google.com">RSVP</a>
@@ -184,28 +185,50 @@
     document.querySelector('.hotel-link').href = LINKS.hotel;
     document.querySelector('.rsvp').href       = LINKS.rsvp;
 
-    const video = document.getElementById('film');
-    const btn   = document.getElementById('unmuteBtn');
+    /* ↓↓↓ TWEAK ME ↓↓↓
+       The curtains start opening around 7s. We let the video play in
+       (muted), then hold it just before the reveal so the user's tap
+       feels like it opens the curtains. */
+    const PAUSE_AT = 6;
 
-    // Some mobile browsers need an explicit play() nudge after load.
-    const tryPlay = () => video.play().catch(() => {});
+    const video = document.getElementById('film');
+    let opened  = false;   // user has tapped to open the curtains
+    let waiting = false;   // held closed at PAUSE_AT, awaiting the tap
+
+    // Nudge muted autoplay — but never resume while we're holding closed
+    // (otherwise a tab-refocus would open the curtains without a tap).
+    const tryPlay = () => {
+      if (waiting) return;
+      if (opened && video.ended) return;
+      video.play().catch(() => {});
+    };
     tryPlay();
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) tryPlay();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) tryPlay(); });
+
+    // Hold the curtains closed at PAUSE_AT until the user opens them.
+    video.addEventListener('timeupdate', () => {
+      if (!opened && video.currentTime >= PAUSE_AT) {
+        waiting = true;
+        video.pause();
+        document.body.classList.add('waiting');   // fade in the "tap to open" cue
+      }
     });
 
-    // Tap the pill to unmute (and restart audio cleanly from a user gesture).
-    btn.addEventListener('click', () => {
+    // A tap anywhere opens the curtains: unmute + resume (with sound).
+    function openCurtains() {
+      if (opened) return;
+      opened  = true;
+      waiting = false;
+      document.body.classList.remove('waiting');
+      document.body.classList.add('opened');       // fade in buttons, hide cue
+      // If autoplay never reached the hold point (e.g. iOS Low Power Mode),
+      // jump straight to it so the tap opens the curtains right away.
+      if (video.currentTime < PAUSE_AT) video.currentTime = PAUSE_AT;
       video.muted = false;
       video.volume = 1;
-      video.play();
-      btn.classList.add('is-hidden');
-    });
-
-    // If the user taps anywhere on the video, also unmute.
-    video.addEventListener('click', () => {
-      if (video.muted) btn.click();
-    });
+      video.play().catch(() => {});
+    }
+    document.addEventListener('click', openCurtains, { once: true });
   </script>
 </body>
 </html>
