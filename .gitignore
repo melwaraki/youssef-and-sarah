@@ -1,0 +1,11 @@
+# Original uncompressed video (62 MB) — the site uses video.mp4 instead
+website.mp4
+
+# Source reference image (30 MB) — not used by the site
+image reference.png
+
+# Local preview server config
+.claude/
+
+# macOS clutter
+.DS_Store

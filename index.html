@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Youssef &amp; Sarah</title>
+  <meta name="description" content="Youssef & Sarah — 19th August 2026, The St. Regis Cairo" />
+
+  <!-- Social share preview -->
+  <meta property="og:title" content="Youssef & Sarah" />
+  <meta property="og:description" content="19th August 2026 · The St. Regis Cairo" />
+  <meta property="og:image" content="poster.jpg" />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root {
+      /* Palette pulled from the invitation reference */
+      --blush:      #f4dbd6;
+      --blush-deep: #e3b3ad;
+      --rose:       #c98b86;
+      --cream:      #fbf3ee;
+      --ink:        #6b4a44;
+
+      /* ↓↓↓ TWEAK ME ↓↓↓
+         Vertical position of the "View the hotel" link over the video,
+         as a % from the top of the video. Higher % = lower down.
+         Aim it just above the pyramids, clear of the text. */
+      --hotel-top: 82%;
+
+      /* ↓↓↓ TWEAK ME ↓↓↓
+         Transparency of the RSVP button's fill: 1 = solid, 0 = invisible.
+         (The "RSVP" text stays fully opaque either way.) */
+      --rsvp-bg-opacity: 0.8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      min-height: 100%;
+      /* Themed backdrop fills the margins on wider screens */
+      background: var(--cream);
+      font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Scrollable stage: a centred, phone-width column so the tall
+       invitation video shows in full and you scroll through it. */
+    .stage {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Relative wrapper so the hotel link can be placed over the video
+       and scroll along with it. */
+    .frame {
+      position: relative;
+      width: 100%;
+      max-width: 460px;        /* phone-width column, centred on desktop */
+    }
+
+    .frame video {
+      width: 100%;
+      height: auto;            /* keep the video's natural tall aspect */
+      display: block;
+    }
+
+    /* ---- In-flow "View the hotel" link (sits over the video) ---- */
+    .hotel-link {
+      position: absolute;
+      top: var(--hotel-top);
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      padding: 10px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(201, 139, 134, 0.55);
+      background: rgba(251, 243, 238, 0.78);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      color: var(--rose);
+      font-family: inherit;
+      font-size: 19px;
+      letter-spacing: 0.06em;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: 0 3px 14px rgba(107, 74, 68, 0.22);
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .hotel-link:active { transform: translate(-50%, -50%) scale(0.96); }
+
+    /* ---- Tap-to-unmute pill (autoplay must start muted) ---- */
+    .unmute {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      right: 16px;
+      z-index: 20;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 15px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(251, 243, 238, 0.82);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 2px 12px rgba(107, 74, 68, 0.25);
+      cursor: pointer;
+      transition: opacity 0.4s ease, transform 0.2s ease;
+    }
+    .unmute:active { transform: scale(0.95); }
+    .unmute svg { width: 17px; height: 17px; fill: var(--rose); }
+    /* Hidden once the user has unmuted */
+    .unmute.is-hidden { opacity: 0; pointer-events: none; }
+
+    /* ---- Fixed RSVP button (always reachable, floats over the video) ---- */
+    .rsvp {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: max(24px, env(safe-area-inset-bottom));
+      z-index: 15;
+      padding: 14px 42px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(201, 139, 134, var(--rsvp-bg-opacity));  /* --rose with adjustable alpha */
+      color: var(--cream);
+      font-family: inherit;
+      font-size: 21px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-decoration: none;
+      box-shadow: 0 4px 18px rgba(107, 74, 68, 0.38);
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .rsvp:active { transform: translateX(-50%) scale(0.96); }
+  </style>
+</head>
+<body>
+
+  <main class="stage">
+    <div class="frame">
+      <video
+        id="film"
+        src="video.mp4"
+        poster="poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        webkit-playsinline
+        preload="auto">
+      </video>
+
+      <!-- In-flow link over the video. Link is set by the LINKS config in the script below. -->
+      <a class="hotel-link" href="https://www.marriott.com/en-us/hotels/caixr-the-st-regis-cairo/overview/" target="_blank" rel="noopener">
+        View the hotel
+      </a>
+    </div>
+  </main>
+
+  <!-- Tap to enable sound -->
+  <button id="unmuteBtn" class="unmute" aria-label="Tap for sound">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12z"/>
+    </svg>
+    <span>Tap for sound</span>
+  </button>
+
+  <!-- Fixed RSVP button. Link is set by the LINKS config in the script below. -->
+  <a class="rsvp" href="https://google.com">RSVP</a>
+
+  <script>
+    /* ============================================================
+       ↓↓↓ EDIT YOUR LINKS HERE ↓↓↓
+       The two buttons point wherever you set these.
+       ============================================================ */
+    const LINKS = {
+      hotel: "https://www.marriott.com/en-us/hotels/caixr-the-st-regis-cairo/overview/",
+      rsvp:  "https://google.com",
+    };
+
+    document.querySelector('.hotel-link').href = LINKS.hotel;
+    document.querySelector('.rsvp').href       = LINKS.rsvp;
+
+    const video = document.getElementById('film');
+    const btn   = document.getElementById('unmuteBtn');
+
+    // Some mobile browsers need an explicit play() nudge after load.
+    const tryPlay = () => video.play().catch(() => {});
+    tryPlay();
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) tryPlay();
+    });
+
+    // Tap the pill to unmute (and restart audio cleanly from a user gesture).
+    btn.addEventListener('click', () => {
+      video.muted = false;
+      video.volume = 1;
+      video.play();
+      btn.classList.add('is-hidden');
+    });
+
+    // If the user taps anywhere on the video, also unmute.
+    video.addEventListener('click', () => {
+      if (video.muted) btn.click();
+    });
+  </script>
+</body>
+</html>
