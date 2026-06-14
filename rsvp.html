@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>RSVP · Youssef &amp; Sarah</title>
+  <meta name="description" content="RSVP for Youssef & Sarah — 19th August 2026, The St. Regis Cairo" />
+
+  <style>
+    :root {
+      --blush:  #f4dbd6;
+      --rose:   #c98b86;
+      --cream:  #fbf3ee;
+      --ink:    #6b4a44;
+
+      /* ↓↓↓ TWEAK ME ↓↓↓ Full-height background image for the RSVP page. */
+      --bg-image: url("poster.jpg");
+      /* Scrim opacity over the background (0 = image fully visible, 1 = solid cream).
+         Higher = more readable text, less busy background. Raise this if you
+         later use a darker / busier background image. */
+      --scrim: 0.35;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      min-height: 100%;
+      font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      -webkit-tap-highlight-color: transparent;
+      background: var(--cream);
+    }
+
+    /* ---- Full-height background image + cream scrim ---- */
+    .bg, .scrim {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+    }
+    .bg {
+      background: var(--bg-image) center / cover no-repeat;
+    }
+    .scrim {
+      z-index: -1;
+      background: var(--cream);
+      opacity: var(--scrim);
+    }
+
+    /* ---- Thin progress bar across the top ---- */
+    .progress {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: rgba(201, 139, 134, 0.18);
+      z-index: 10;
+    }
+    .progress .bar {
+      height: 100%;
+      width: 0%;
+      background: var(--rose);
+      transition: width 0.45s ease;
+    }
+
+    /* ---- Back chevron ---- */
+    .back {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      left: 16px;
+      z-index: 10;
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      border: none;
+      background: rgba(251, 243, 238, 0.7);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-radius: 999px;
+      color: var(--rose);
+      font-size: 22px;
+      cursor: pointer;
+      transition: opacity 0.3s ease, transform 0.15s ease;
+    }
+    .back:active { transform: scale(0.92); }
+    .back[hidden] { display: none; }
+
+    /* ---- Centered conversational form ---- */
+    .stage {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 72px 26px;
+    }
+    .card {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    /* Step enter animation */
+    .step {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+    .step.in { opacity: 1; transform: translateY(0); }
+
+    .eyebrow {
+      font-size: 14px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--rose);
+      margin-bottom: 14px;
+    }
+    .q-title {
+      font-size: 32px;
+      line-height: 1.18;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .q-sub {
+      font-size: 18px;
+      color: rgba(107, 74, 68, 0.7);
+      margin-bottom: 26px;
+    }
+    .q-title + .field, .q-title + .choices { margin-top: 24px; }
+
+    /* Text / email / number inputs — clean underline style */
+    .field input,
+    .field textarea {
+      width: 100%;
+      font-family: inherit;
+      font-size: 23px;
+      color: var(--ink);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid rgba(201, 139, 134, 0.45);
+      padding: 8px 2px;
+      transition: border-color 0.2s ease;
+    }
+    .field textarea { resize: none; line-height: 1.4; }
+    .field input:focus,
+    .field textarea:focus { outline: none; border-bottom-color: var(--rose); }
+    .field input::placeholder,
+    .field textarea::placeholder { color: rgba(107, 74, 68, 0.35); }
+
+    /* Multiple-choice options */
+    .choices { display: flex; flex-direction: column; gap: 12px; }
+    .choices button {
+      font-family: inherit;
+      font-size: 22px;
+      text-align: left;
+      color: var(--ink);
+      background: rgba(251, 243, 238, 0.75);
+      border: 1.5px solid rgba(201, 139, 134, 0.5);
+      border-radius: 14px;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.12s ease;
+    }
+    .choices button:hover { border-color: var(--rose); }
+    .choices button:active { transform: scale(0.98); }
+    .choices button.selected { background: var(--rose); color: var(--cream); border-color: var(--rose); }
+
+    .error {
+      color: #b5524b;
+      font-size: 16px;
+      margin-top: 14px;
+      min-height: 20px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .error.show { opacity: 1; }
+
+    /* Next / submit button row */
+    .actions {
+      margin-top: 30px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .next {
+      font-family: inherit;
+      font-size: 19px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--cream);
+      background: var(--rose);
+      border: none;
+      border-radius: 999px;
+      padding: 13px 34px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.2s ease;
+    }
+    .next:active { transform: scale(0.96); }
+    .hintkey { font-size: 14px; color: rgba(107, 74, 68, 0.5); }
+    @media (max-width: 420px) { .hintkey { display: none; } }
+
+    /* ---- Thank-you screen ---- */
+    .thanks { text-align: center; }
+    .thanks .mark { font-size: 40px; margin-bottom: 18px; }
+    .thanks h1 { font-size: 34px; font-weight: 500; margin-bottom: 14px; color: var(--ink); }
+    .thanks p { font-size: 20px; color: rgba(107, 74, 68, 0.8); line-height: 1.4; margin-bottom: 28px; }
+    .thanks a {
+      font-size: 16px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--rose); text-decoration: none; border-bottom: 1px solid rgba(201,139,134,0.5);
+      padding-bottom: 2px;
+    }
+    .sending { text-align: center; font-size: 22px; color: rgba(107,74,68,0.7); }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="scrim"></div>
+
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <button class="back" id="back" aria-label="Back" hidden>&#8592;</button>
+
+  <main class="stage">
+    <div class="card">
+      <div class="step" id="step"></div>
+    </div>
+  </main>
+
+  <script>
+    /* ============================================================
+       ↓↓↓ RSVP ENDPOINTS — paste your URLs here (setup steps below) ↓↓↓
+       Both are optional: leave blank to test the flow without saving.
+       ============================================================ */
+    const RSVP_CONFIG = {
+      // Google Apps Script Web App URL → writes a row to your Google Sheet.
+      appsScriptUrl: "https://script.google.com/macros/s/AKfycbzVCaYDE0_8Wf5drdTd3ryLOnCKvJG7cQ6uSQnW1Ff2LGGLx_IEmY8JM8TAxYRfHBIAdQ/exec",
+      // IFTTT Webhooks base URL → Telegram backup.
+      // Format: https://maker.ifttt.com/trigger/rsvp/with/key/YOUR_KEY
+      iftttUrl: "https://maker.ifttt.com/trigger/rsvp/with/key/IWOQl8UDaD5EQZtvKcLTB",
+    };
+
+    /* ============================================================
+       ↓↓↓ THE QUESTIONS — reorder / reword / add freely ↓↓↓
+       types: 'choice' | 'text' | 'email' | 'number' | 'textarea'
+       showIf: optional fn(answers) -> only show when it returns true
+       ============================================================ */
+    const QUESTIONS = [
+      { id: "attending", type: "choice", required: true,
+        title: "Will you be attending our wedding?",
+        options: ["Yes, I'll be there", "Sadly, I can't make it"],
+        // normalise the two long labels to a clean Yes/No when saved
+        valueMap: { "Yes, I'll be there": "Yes", "Sadly, I can't make it": "No" } },
+
+      { id: "name", type: "text", required: true,
+        title: "What's your name?", placeholder: "Full name" },
+
+      { id: "email", type: "email", required: true,
+        title: "And your email?", sub: "So we can send you the details.",
+        placeholder: "you@example.com" },
+
+      { id: "party", type: "number", required: true,
+        title: "How many will be in your party?", sub: "Including yourself.",
+        placeholder: "1", min: 1,
+        showIf: (a) => a.attending === "Yes" },
+
+      { id: "guests", type: "textarea", required: false,
+        title: "Who's joining you?", sub: "Names of your guests (optional).",
+        placeholder: "e.g. Jane Doe, John Doe",
+        showIf: (a) => a.attending === "Yes" },
+
+      { id: "dietary", type: "textarea", required: false,
+        title: "Any dietary requirements or allergies?", placeholder: "Optional",
+        showIf: (a) => a.attending === "Yes" },
+
+      { id: "song", type: "text", required: false,
+        title: "A song to get you on the dance floor?", placeholder: "Optional",
+        showIf: (a) => a.attending === "Yes" },
+
+      { id: "note", type: "textarea", required: false,
+        title: "Leave a note for Youssef & Sarah", placeholder: "Optional" },
+    ];
+
+    /* ============================================================ */
+
+    const answers = {};
+    let pos = 0;
+
+    const stepEl = document.getElementById("step");
+    const barEl  = document.getElementById("bar");
+    const backEl = document.getElementById("back");
+
+    const visible = () => QUESTIONS.filter((q) => !q.showIf || q.showIf(answers));
+    const isEmpty = (v) => v === undefined || v === null || String(v).trim() === "";
+
+    function render() {
+      const steps = visible();
+      if (pos >= steps.length) return submit();
+      const q = steps[pos];
+
+      backEl.hidden = pos === 0;
+      barEl.style.width = (pos / steps.length) * 100 + "%";
+
+      let inner = "";
+      if (q.sub) inner += '<div class="eyebrow" style="display:none"></div>';
+      inner += '<h2 class="q-title">' + q.title + "</h2>";
+      if (q.sub) inner += '<p class="q-sub">' + q.sub + "</p>";
+
+      if (q.type === "choice") {
+        inner += '<div class="choices">';
+        q.options.forEach((opt, i) => {
+          const saved = (q.valueMap ? q.valueMap[opt] : opt);
+          const sel = answers[q.id] === saved ? " selected" : "";
+          inner += '<button type="button" class="choice' + sel + '" data-val="' + encodeURIComponent(saved) + '">' + opt + "</button>";
+        });
+        inner += "</div>";
+      } else {
+        const val = answers[q.id] != null ? String(answers[q.id]).replace(/"/g, "&quot;") : "";
+        inner += '<div class="field">';
+        if (q.type === "textarea") {
+          inner += '<textarea rows="3" placeholder="' + (q.placeholder || "") + '">' + val + "</textarea>";
+        } else {
+          const t = q.type === "email" ? "email" : q.type === "number" ? "number" : "text";
+          const min = q.min != null ? ' min="' + q.min + '"' : "";
+          inner += '<input type="' + t + '"' + min + ' placeholder="' + (q.placeholder || "") + '" value="' + val + '" />';
+        }
+        inner += "</div>";
+      }
+
+      inner += '<div class="error" id="err"></div>';
+
+      if (q.type !== "choice") {
+        const last = pos === steps.length - 1;
+        inner += '<div class="actions"><button class="next" id="next">' + (last ? "Send RSVP" : "Next") + "</button>";
+        if (q.type !== "textarea") inner += '<span class="hintkey">press Enter &#8629;</span>';
+        inner += "</div>";
+      }
+
+      stepEl.className = "step";
+      stepEl.innerHTML = inner;
+      // trigger enter animation
+      requestAnimationFrame(() => requestAnimationFrame(() => stepEl.classList.add("in")));
+
+      wire(q);
+    }
+
+    function wire(q) {
+      if (q.type === "choice") {
+        stepEl.querySelectorAll(".choice").forEach((b) => {
+          b.addEventListener("click", () => {
+            answers[q.id] = decodeURIComponent(b.dataset.val);
+            advance();
+          });
+        });
+        return;
+      }
+      const input = stepEl.querySelector("input, textarea");
+      if (input) {
+        input.focus();
+        if (q.type !== "textarea") {
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") { e.preventDefault(); onNext(q, input); }
+          });
+        }
+      }
+      const nextBtn = stepEl.querySelector("#next");
+      if (nextBtn) nextBtn.addEventListener("click", () => onNext(q, input));
+    }
+
+    function onNext(q, input) {
+      const raw = input ? input.value : "";
+      if (q.required && isEmpty(raw)) return showError("This one's required.");
+      if (q.type === "email" && !isEmpty(raw) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw))
+        return showError("That doesn't look like a valid email.");
+      answers[q.id] = isEmpty(raw) ? "" : (q.type === "number" ? Number(raw) : raw.trim());
+      advance();
+    }
+
+    function showError(msg) {
+      const e = document.getElementById("err");
+      if (e) { e.textContent = msg; e.classList.add("show"); }
+    }
+
+    function advance() { pos++; render(); }
+    backEl.addEventListener("click", () => { if (pos > 0) { pos--; render(); } });
+
+    /* ---------------- Submission ---------------- */
+    function cleanPayload() {
+      const a = Object.assign({}, answers);
+      if (a.attending !== "Yes") { delete a.party; delete a.guests; delete a.dietary; delete a.song; }
+      a.submittedAt = new Date().toISOString();
+      return a;
+    }
+
+    function telegramText(a) {
+      const L = ["🤍 New RSVP — Youssef & Sarah",
+                 "Attending: " + (a.attending || ""),
+                 "Name: " + (a.name || ""),
+                 "Email: " + (a.email || "")];
+      if (a.attending === "Yes") {
+        L.push("Party size: " + (a.party != null ? a.party : ""));
+        if (a.guests)  L.push("Guests: " + a.guests);
+        if (a.dietary) L.push("Dietary: " + a.dietary);
+        if (a.song)    L.push("Song: " + a.song);
+      }
+      if (a.note) L.push("Note: " + a.note);
+      return L.join("\n");
+    }
+
+    async function submit() {
+      const payload = cleanPayload();
+      stepEl.className = "step in";
+      stepEl.innerHTML = '<div class="sending">Sending your RSVP&#8230;</div>';
+
+      // device-side safety copy (last resort if both endpoints fail)
+      try {
+        const all = JSON.parse(localStorage.getItem("rsvps") || "[]");
+        all.push(payload);
+        localStorage.setItem("rsvps", JSON.stringify(all));
+      } catch (e) {}
+
+      const tasks = [];
+      if (RSVP_CONFIG.appsScriptUrl) {
+        tasks.push(fetch(RSVP_CONFIG.appsScriptUrl, {
+          method: "POST", mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload),
+        }));
+      }
+      if (RSVP_CONFIG.iftttUrl) {
+        const u = RSVP_CONFIG.iftttUrl
+          + "?value1=" + encodeURIComponent(telegramText(payload))
+          + "&value2=" + encodeURIComponent(payload.name || "")
+          + "&value3=" + encodeURIComponent(payload.attending || "");
+        tasks.push(fetch(u, { method: "POST", mode: "no-cors" }));
+      }
+      try { await Promise.allSettled(tasks); } catch (e) {}
+
+      thankYou(payload.attending === "Yes");
+    }
+
+    function thankYou(coming) {
+      barEl.style.width = "100%";
+      backEl.hidden = true;
+      const heading = coming ? "You're on the list" : "Thank you for letting us know";
+      const body = coming
+        ? "We can't wait to celebrate with you on 19th August 2026 at The St. Regis Cairo. 🤍"
+        : "We'll miss you — but we'll be thinking of you on the day. 🤍";
+      stepEl.className = "step";
+      stepEl.innerHTML =
+        '<div class="thanks">' +
+          '<div class="mark">🤍</div>' +
+          "<h1>" + heading + "</h1>" +
+          "<p>" + body + "</p>" +
+          '<a href="index.html">Back to the invitation</a>' +
+        "</div>";
+      requestAnimationFrame(() => requestAnimationFrame(() => stepEl.classList.add("in")));
+    }
+
+    render();
+  </script>
+</body>
+</html>
