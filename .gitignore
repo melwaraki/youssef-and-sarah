@@ -1,6 +1,7 @@
 # Original uncompressed videos — the site uses the encoded video.mp4 instead
 website.mp4
 curtains video.mp4
+videos 2/
 
 # Source reference image (30 MB) — not used by the site
 image reference.png

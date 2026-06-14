@@ -12,6 +12,11 @@
   <meta property="og:image" content="poster.jpg" />
   <meta property="og:type" content="website" />
 
+  <!-- Elegant serif to match the invitation theme -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600&display=swap" rel="stylesheet" />
+
   <style>
     :root {
       /* Palette pulled from the invitation reference */
@@ -41,6 +46,28 @@
       background: var(--cream);
       font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
       -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Before the curtains open: pin the page to the top of the video and
+       lock scrolling, so the closed curtains fill the screen and can't be
+       scrolled past. Scrolling unlocks the moment the curtains open. */
+    body:not(.opened) {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    /* Hide iOS Safari's built-in playback UI (the big play button and the
+       control bar it overlays on inline / paused videos). Keeps the curtain
+       reveal clean — no media controls appear over the video. */
+    #film::-webkit-media-controls,
+    #film::-webkit-media-controls-enclosure,
+    #film::-webkit-media-controls-panel,
+    #film::-webkit-media-controls-play-button,
+    #film::-webkit-media-controls-start-playback-button {
+      display: none !important;
+      -webkit-appearance: none;
+      opacity: 0 !important;
     }
 
     /* Scrollable stage: a centred, phone-width column so the tall
@@ -154,9 +181,13 @@
         poster="poster.jpg"
         autoplay
         muted
+        loop
         playsinline
         webkit-playsinline
-        preload="auto">
+        preload="auto"
+        x-webkit-airplay="deny"
+        disablepictureinpicture
+        disableremoteplayback>
       </video>
 
       <!-- In-flow link over the video. Link is set by the LINKS config in the script below. -->
@@ -189,7 +220,7 @@
        The curtains start opening around 7s. We let the video play in
        (muted), then hold it just before the reveal so the user's tap
        feels like it opens the curtains. */
-    const PAUSE_AT = 6;     // hold the closed curtains here, awaiting the tap
+    const PAUSE_AT = 7;     // hold the closed curtains here, awaiting the tap
     const CUE_AT   = 2.5;   // seconds after load before the "tap to open" cue appears
 
     const video = document.getElementById('film');

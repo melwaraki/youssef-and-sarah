@@ -6,6 +6,11 @@
   <title>RSVP · Youssef &amp; Sarah</title>
   <meta name="description" content="RSVP for Youssef & Sarah — 19th August 2026, The St. Regis Cairo" />
 
+  <!-- Elegant serif to match the invitation theme -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet" />
+
   <style>
     :root {
       --blush:  #f4dbd6;
@@ -13,37 +18,50 @@
       --cream:  #fbf3ee;
       --ink:    #6b4a44;
 
-      /* ↓↓↓ TWEAK ME ↓↓↓ Full-height background image for the RSVP page. */
-      --bg-image: url("poster.jpg");
-      /* Scrim opacity over the background (0 = image fully visible, 1 = solid cream).
-         Higher = more readable text, less busy background. Raise this if you
-         later use a darker / busier background image. */
-      --scrim: 0.35;
+      /* Scrim opacity over the background video (0 = video fully visible,
+         1 = solid cream). Higher = more readable text, less busy background. */
+      --scrim: 0.3;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* Cream lives on the html canvas (painted behind everything) so it
+       never covers the fixed background video, which sits at z-index -2. */
+    html { background: var(--cream); }
     html, body {
       min-height: 100%;
       font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
       color: var(--ink);
       -webkit-tap-highlight-color: transparent;
-      background: var(--cream);
     }
 
-    /* ---- Full-height background image + cream scrim ---- */
+    /* ---- Full-height background video + cream scrim ---- */
     .bg, .scrim {
       position: fixed;
       inset: 0;
       z-index: -2;
     }
     .bg {
-      background: var(--bg-image) center / cover no-repeat;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
     }
     .scrim {
       z-index: -1;
       background: var(--cream);
       opacity: var(--scrim);
+    }
+
+    /* Hide any iOS Safari playback UI over the background video. */
+    .bg::-webkit-media-controls,
+    .bg::-webkit-media-controls-enclosure,
+    .bg::-webkit-media-controls-panel,
+    .bg::-webkit-media-controls-play-button,
+    .bg::-webkit-media-controls-start-playback-button {
+      display: none !important;
+      -webkit-appearance: none;
+      opacity: 0 !important;
     }
 
     /* ---- Thin progress bar across the top ---- */
@@ -145,16 +163,19 @@
     .field textarea::placeholder { color: rgba(107, 74, 68, 0.35); }
 
     /* Multiple-choice options */
-    .choices { display: flex; flex-direction: column; gap: 12px; }
+    .choices { display: flex; flex-direction: column; gap: 14px; }
     .choices button {
       font-family: inherit;
       font-size: 22px;
       text-align: left;
       color: var(--ink);
-      background: rgba(251, 243, 238, 0.75);
-      border: 1.5px solid rgba(201, 139, 134, 0.5);
-      border-radius: 14px;
-      padding: 16px 20px;
+      background: rgba(251, 243, 238, 0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1.5px solid rgba(201, 139, 134, 0.55);
+      border-radius: 999px;
+      padding: 16px 26px;
+      box-shadow: 0 3px 14px rgba(107, 74, 68, 0.12);
       cursor: pointer;
       transition: background 0.2s ease, border-color 0.2s ease, transform 0.12s ease;
     }
@@ -182,13 +203,14 @@
     .next {
       font-family: inherit;
       font-size: 19px;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--cream);
       background: var(--rose);
       border: none;
       border-radius: 999px;
-      padding: 13px 34px;
+      padding: 14px 38px;
+      box-shadow: 0 4px 18px rgba(107, 74, 68, 0.30);
       cursor: pointer;
       transition: transform 0.15s ease, opacity 0.2s ease;
     }
@@ -210,7 +232,10 @@
   </style>
 </head>
 <body>
-  <div class="bg"></div>
+  <video class="bg" autoplay muted loop playsinline webkit-playsinline preload="auto"
+         poster="poster_rsvp.jpg" x-webkit-airplay="deny" disablepictureinpicture disableremoteplayback>
+    <source src="rsvp-bg.mp4" type="video/mp4" />
+  </video>
   <div class="scrim"></div>
 
   <div class="progress"><div class="bar" id="bar"></div></div>
@@ -250,30 +275,16 @@
       { id: "name", type: "text", required: true,
         title: "What's your name?", placeholder: "Full name" },
 
-      { id: "email", type: "email", required: true,
-        title: "And your email?", sub: "So we can send you the details.",
-        placeholder: "you@example.com" },
-
+      // From here on, only shown when attending === "Yes".
+      // A "No" answer ends right after the name with a warm message.
       { id: "party", type: "number", required: true,
         title: "How many will be in your party?", sub: "Including yourself.",
         placeholder: "1", min: 1,
         showIf: (a) => a.attending === "Yes" },
 
-      { id: "guests", type: "textarea", required: false,
-        title: "Who's joining you?", sub: "Names of your guests (optional).",
-        placeholder: "e.g. Jane Doe, John Doe",
-        showIf: (a) => a.attending === "Yes" },
-
-      { id: "dietary", type: "textarea", required: false,
-        title: "Any dietary requirements or allergies?", placeholder: "Optional",
-        showIf: (a) => a.attending === "Yes" },
-
       { id: "song", type: "text", required: false,
         title: "A song to get you on the dance floor?", placeholder: "Optional",
         showIf: (a) => a.attending === "Yes" },
-
-      { id: "note", type: "textarea", required: false,
-        title: "Leave a note for Youssef & Sarah", placeholder: "Optional" },
     ];
 
     /* ============================================================ */
@@ -382,7 +393,7 @@
     /* ---------------- Submission ---------------- */
     function cleanPayload() {
       const a = Object.assign({}, answers);
-      if (a.attending !== "Yes") { delete a.party; delete a.guests; delete a.dietary; delete a.song; }
+      if (a.attending !== "Yes") { delete a.party; delete a.song; }
       a.submittedAt = new Date().toISOString();
       return a;
     }
@@ -390,15 +401,11 @@
     function telegramText(a) {
       const L = ["🤍 New RSVP — Youssef & Sarah",
                  "Attending: " + (a.attending || ""),
-                 "Name: " + (a.name || ""),
-                 "Email: " + (a.email || "")];
+                 "Name: " + (a.name || "")];
       if (a.attending === "Yes") {
         L.push("Party size: " + (a.party != null ? a.party : ""));
-        if (a.guests)  L.push("Guests: " + a.guests);
-        if (a.dietary) L.push("Dietary: " + a.dietary);
-        if (a.song)    L.push("Song: " + a.song);
+        if (a.song) L.push("Song: " + a.song);
       }
-      if (a.note) L.push("Note: " + a.note);
       return L.join("\n");
     }
 
@@ -437,10 +444,15 @@
     function thankYou(coming) {
       barEl.style.width = "100%";
       backEl.hidden = true;
-      const heading = coming ? "You're on the list" : "Thank you for letting us know";
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      const name = esc((answers.name || "").trim());
+      const heading = coming
+        ? "Thanks for your RSVP, " + name
+        : "Thank you, " + name;
       const body = coming
-        ? "We can't wait to celebrate with you on 19th August 2026 at The St. Regis Cairo. 🤍"
-        : "We'll miss you — but we'll be thinking of you on the day. 🤍";
+        ? "We can't wait to celebrate our special day with you! 🤍"
+        : "We're so sorry you can't make it — you'll be missed, and we'll be thinking of you on the day. 🤍";
       stepEl.className = "step";
       stepEl.innerHTML =
         '<div class="thanks">' +
