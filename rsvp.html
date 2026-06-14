@@ -277,9 +277,9 @@
 
       // From here on, only shown when attending === "Yes".
       // A "No" answer ends right after the name with a warm message.
-      { id: "party", type: "number", required: true,
+      { id: "party", type: "text", required: true, inputmode: "numeric",
         title: "How many will be in your party?", sub: "Including yourself.",
-        placeholder: "1", min: 1,
+        placeholder: "1",
         showIf: (a) => a.attending === "Yes" },
 
       { id: "song", type: "text", required: false,
@@ -328,7 +328,8 @@
         } else {
           const t = q.type === "email" ? "email" : q.type === "number" ? "number" : "text";
           const min = q.min != null ? ' min="' + q.min + '"' : "";
-          inner += '<input type="' + t + '"' + min + ' placeholder="' + (q.placeholder || "") + '" value="' + val + '" />';
+          const im  = q.inputmode ? ' inputmode="' + q.inputmode + '"' : "";
+          inner += '<input type="' + t + '"' + min + im + ' placeholder="' + (q.placeholder || "") + '" value="' + val + '" />';
         }
         inner += "</div>";
       }
