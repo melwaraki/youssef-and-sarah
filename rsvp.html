@@ -149,12 +149,15 @@
     }
     .q-title + .field, .q-title + .choices { margin-top: 24px; }
 
-    /* Text / email / number inputs — clean underline style */
+    /* Text / email / number inputs — clean underline style.
+       Match the guest-name field exactly: 20px, Light (300). Inputs don't
+       inherit the body's font-weight by default, so set it explicitly. */
     .field input,
     .field textarea {
       width: 100%;
       font-family: inherit;
-      font-size: 23px;
+      font-size: 20px;
+      font-weight: 300;
       color: var(--ink);
       background: transparent;
       border: none;
