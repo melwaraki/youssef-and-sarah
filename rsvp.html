@@ -175,7 +175,8 @@
     .choices { display: flex; flex-direction: column; gap: 14px; }
     .choices button {
       font-family: inherit;
-      font-size: 22px;
+      font-size: 20px;
+      font-weight: 300;
       text-align: left;
       color: var(--ink);
       background: rgba(251, 243, 238, 0.72);
@@ -475,7 +476,10 @@
           list.splice(Number(btn.dataset.i), 1);
           renderGuests();
         });
-        stepEl.querySelector("#next").addEventListener("click", advance);
+        stepEl.querySelector("#next").addEventListener("click", () => {
+          addName();   // commit any name still typed in the box before moving on
+          advance();
+        });
         renderGuests();
         gInput.focus();
         return;
