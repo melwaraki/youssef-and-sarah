@@ -34,7 +34,7 @@
     }
 
     /* ---- Full-height background video + cream scrim ---- */
-    .bg, .scrim {
+    .bg, .bg-fallback, .scrim {
       position: fixed;
       inset: 0;
       z-index: -2;
@@ -45,6 +45,13 @@
       object-fit: cover;
       object-position: center;
     }
+    /* Static fallback shown when the video can't autoplay (e.g. Low Power Mode) */
+    .bg-fallback {
+      background: url("poster_rsvp.jpg") center / cover no-repeat;
+      display: none;
+    }
+    body.bg-static video.bg { display: none; }
+    body.bg-static .bg-fallback { display: block; }
     .scrim {
       z-index: -1;
       background: var(--cream);
@@ -235,7 +242,29 @@
          poster="poster_rsvp.jpg" x-webkit-airplay="deny" disablepictureinpicture disableremoteplayback>
     <source src="rsvp-bg.mp4" type="video/mp4" />
   </video>
+  <div class="bg-fallback" aria-hidden="true"></div>
   <div class="scrim"></div>
+
+  <script>
+    /* If autoplay is blocked (e.g. iOS Low Power Mode), the background video
+       won't run, so swap to the static poster image rather than leave a frozen
+       frame. iOS exposes no direct LPM flag — a rejected play() is the signal. */
+    (function () {
+      const v = document.querySelector("video.bg");
+      if (!v) return;
+      let settled = false;
+      const useStatic = () => {
+        if (settled) return;
+        settled = true;
+        document.body.classList.add("bg-static");
+        try { v.pause(); } catch (e) {}
+      };
+      const p = v.play();
+      if (p && typeof p.then === "function") p.then(() => { settled = true; }).catch(useStatic);
+      // Fallback for browsers that don't reject the promise: if it never started.
+      setTimeout(() => { if (!settled && v.paused && v.currentTime < 0.2) useStatic(); }, 1200);
+    })();
+  </script>
 
   <div class="progress"><div class="bar" id="bar"></div></div>
   <button class="back" id="back" aria-label="Back" hidden>&#8592;</button>
