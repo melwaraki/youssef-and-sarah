@@ -6,11 +6,6 @@
   <title>RSVP · Youssef &amp; Sarah</title>
   <meta name="description" content="RSVP for Youssef & Sarah — 19th August 2026, The St. Regis Cairo" />
 
-  <!-- Elegant serif to match the invitation theme -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet" />
-
   <style>
     :root {
       --blush:  #f4dbd6;
@@ -30,7 +25,10 @@
     html { background: var(--cream); }
     html, body {
       min-height: 100%;
-      font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      /* Helvetica Neue Thin to match the invitation; Light base keeps small
+         text legible, headings go true Thin (100) below. */
+      font-family: "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif;
+      font-weight: 300;
       color: var(--ink);
       -webkit-tap-highlight-color: transparent;
     }
@@ -130,9 +128,10 @@
       margin-bottom: 14px;
     }
     .q-title {
-      font-size: 32px;
-      line-height: 1.18;
-      font-weight: 500;
+      font-size: 33px;
+      line-height: 1.2;
+      font-weight: 100;        /* Helvetica Neue Thin */
+      letter-spacing: 0.01em;
       color: var(--ink);
       margin-bottom: 8px;
     }
@@ -221,7 +220,7 @@
     /* ---- Thank-you screen ---- */
     .thanks { text-align: center; }
     .thanks .mark { font-size: 40px; margin-bottom: 18px; }
-    .thanks h1 { font-size: 34px; font-weight: 500; margin-bottom: 14px; color: var(--ink); }
+    .thanks h1 { font-size: 35px; font-weight: 100; letter-spacing: 0.01em; margin-bottom: 14px; color: var(--ink); }
     .thanks p { font-size: 20px; color: rgba(107, 74, 68, 0.8); line-height: 1.4; margin-bottom: 28px; }
     .thanks a {
       font-size: 16px; letter-spacing: 0.12em; text-transform: uppercase;
@@ -278,12 +277,12 @@
       // From here on, only shown when attending === "Yes".
       // A "No" answer ends right after the name with a warm message.
       { id: "party", type: "text", required: true, inputmode: "numeric",
-        title: "How many will be in your party?", sub: "Including yourself.",
+        title: "How many guests will be attending?", sub: "Including yourself.",
         placeholder: "1",
         showIf: (a) => a.attending === "Yes" },
 
       { id: "song", type: "text", required: false,
-        title: "A song to get you on the dance floor?", placeholder: "Optional",
+        title: "Any requests for the DJ?", placeholder: "Optional",
         showIf: (a) => a.attending === "Yes" },
     ];
 
